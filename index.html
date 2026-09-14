@@ -190,7 +190,8 @@
 
         <div class="btn-container">
             <button type="submit" id="submitBtn">บันทึกข้อมูลเข้าระบบ</button>
-            <button type="button" class="btn-secondary" onclick="resetForm()">ล้างฟอร์ม / กรอกใหม่</button>
+            <!-- เปลี่ยนข้อความตรงนี้ให้สื่อความหมายชัดเจน -->
+            <button type="button" class="btn-secondary" onclick="resetForm()">ล้างข้อมูลเพื่อบันทึกเคสใหม่</button>
         </div>
         <div id="loading">กำลังบันทึกข้อมูล... กรุณารอสักครู่</div>
     </form>
@@ -306,15 +307,25 @@
         }
     }
 
-    // ฟังก์ชันล้างฟอร์มและปลดล็อคกลับมาปกติ
+    // ฟังก์ชันล้างข้อมูลเพื่อเริ่มเคสใหม่ (ตัดวงจร rowId ป้องกันการทับข้อมูลเก่า)
     function resetForm() {
+        // 1. เคลียร์ค่าในฟอร์มทั้งหมด
         document.getElementById('pm25Form').reset();
+    
+        // 2. **สำคัญที่สุด:** ล้างค่า rowId ทิ้งให้เป็นค่าว่าง เพื่อบังคับให้ระบบมองเป็น "เคสใหม่" (เพิ่มแถวใหม่) เท่านั้น
         document.getElementById('rowId').value = '';
+    
+        // 3. เคลียร์ผลการค้นหาค้างทิ้ง
         document.getElementById('searchResultList').innerHTML = '';
-        
+    
+        // 4. ปลดล็อคฟอร์มทุกช่อง (กรณีที่เผลอไปกดดูแบบอ่านอย่างเดียว) ให้กลับมาพิมพ์ได้ปกติ
         const inputs = document.querySelectorAll('#pm25Form input, #pm25Form select, #pm25Form textarea');
         inputs.forEach(input => input.disabled = false);
+    
+        // 5. แสดงปุ่มบันทึกกลับมา
         document.getElementById('submitBtn').style.display = 'inline-block';
+    
+        alert('ล้างหน้าจอเรียบร้อย: พร้อมสำหรับบันทึกเคสใหม่แล้วครับ');
     }
 </script>
 
