@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบสอบสวนโรครายบุคคล (PM2.5) - คลินิกมลพิษ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 850px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { text-align: center; color: #0066cc; margin-bottom: 5px; }
+        .form-subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
+        
+        /* Search Box Bar */
+        .search-bar { background: #eef4fb; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: flex; gap: 10px; align-items: center; border: 1px solid #d0e1f9; }
+        .search-bar input { flex: 1; padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-family: 'Sarabun'; }
+        
+        fieldset { border: 1px solid #dcdcdc; border-radius: 8px; padding: 20px; margin-bottom: 25px; background-color: #fafbfc; }
+        legend { font-weight: 600; color: #0055a5; background: #eef4fb; padding: 5px 15px; border: 1px solid #d0e1f9; border-radius: 5px; }
+        .form-group { margin-bottom: 15px; }
+        .row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .col { flex: 1; min-width: 200px; }
+        label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; font-family: 'Sarabun'; font-size: 14px; box-sizing: border-box; }
+        .checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+        .checkbox-inline, .radio-inline { display: flex; align-items: center; gap: 8px; font-weight: normal; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
+        th { background-color: #f1f5f9; }
+        td.text-center { text-align: center; }
+        .btn-container { text-align: center; margin-top: 30px; display: flex; justify-content: center; gap: 15px; }
+        button { background-color: #0066cc; color: white; border: none; padding: 12px 25px; font-size: 16px; font-weight: 600; border-radius: 6px; cursor: pointer; font-family: 'Sarabun'; transition: background 0.2s; }
+        button:hover { background-color: #004d99; }
+        button.btn-secondary { background-color: #555; }
+        button.btn-secondary:hover { background-color: #333; }
+        #loading { display: none; text-align: center; color: #0066cc; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>แบบสอบสวนโรครายบุคคลสำหรับผู้ป่วยและกลุ่มเสี่ยง</h2>
+    <div class="form-subtitle">คลินิกมลพิษ โรงพยาบาล (บันทึกข้อมูลลง Google Sheets อัตโนมัติ)</div>
+
+    <!-- แถบค้นหาเคสเก่า -->
+    <div class="search-bar">
+        <strong>ค้นหาเคสเก่า:</strong>
+        <input type="text" id="searchKeyword" placeholder="พิมพ์ชื่อ-นามสกุล เพื่อดึงข้อมูลเดิมขึ้นมาดู/แก้ไข">
+        <button type="button" onclick="searchCase()" style="padding: 8px 15px; font-size: 14px;">ค้นหา</button>
+    </div>
+    <div id="searchResultList" style="margin-bottom: 15px; font-size: 14px; color: #0066cc;"></div>
+
+    <form id="pm25Form">
+        <input type="hidden" id="rowId" name="rowId" value="">
+
+        <!-- ส่วนที่ 1 -->
+        <fieldset>
+            <legend>ส่วนที่ 1 ข้อมูลทั่วไป</legend>
+            <div class="form-group">
+                <label>1. ชื่อ-สกุล:</label>
+                <input type="text" name="fullname" required>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <label>2. เพศ:</label>
+                    <div class="radio-group">
+                        <label class="radio-inline"><input type="radio" name="gender" value="ชาย"> 1) ชาย</label>
+                        <label class="radio-inline"><input type="radio" name="gender" value="หญิง"> 2) หญิง</label>
+                    </div>
+                </div>
+                <div class="col"><label>3. อายุ (ปี):</label><input type="number" name="age"></div>
+                <div class="col"><label>4. น้ำหนัก (กก.):</label><input type="number" step="0.1" name="weight"></div>
+                <div class="col"><label>5. ส่วนสูง (ซม.):</label><input type="number" step="0.1" name="height"></div>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>6. ที่อยู่ขณะป่วย:</label>
+                <div class="row">
+                    <div class="col"><input type="text" name="addr_no" placeholder="บ้านเลขที่"></div>
+                    <div class="col"><input type="text" name="addr_moo" placeholder="หมู่"></div>
+                    <div class="col"><input type="text" name="addr_road" placeholder="ถนน"></div>
+                </div>
+                <div class="row" style="margin-top: 10px;">
+                    <div class="col"><input type="text" name="addr_tambon" placeholder="ตำบล"></div>
+                    <div class="col"><input type="text" name="addr_amphoe" placeholder="อำเภอ"></div>
+                    <div class="col"><input type="text" name="addr_province" placeholder="จังหวัด"></div>
+                </div>
+            </div>
+            <div class="form-group"><label>7. ระยะเวลาที่อาศัยในพื้นที่:</label><input type="text" name="duration_stay"></div>
+            <div class="form-group">
+                <label>8. อาชีพหลัก:</label>
+                <div class="radio-group">
+                    <label class="radio-inline"><input type="radio" name="occupation" value="ทำนา/ทำสวน/ทำไร่"> ทำนา/ทำสวน/ทำไร่</label>
+                    <label class="radio-inline"><input type="radio" name="occupation" value="รับจ้างทั่วไป"> รับจ้างทั่วไป</label>
+                    <label class="radio-inline"><input type="radio" name="occupation" value="ค้าขายหรือธุรกิจส่วนตัว"> ค้าขาย/ธุรกิจส่วนตัว</label>
+                    <label class="radio-inline"><input type="radio" name="occupation" value="ข้าราชการ"> ข้าราชการ</label>
+                    <label class="radio-inline"><input type="radio" name="occupation" value="นักเรียน/นักศึกษา"> นักเรียน/นักศึกษา</label>
+                    <label class="radio-inline"><input type="radio" name="occupation" value="อื่นๆ"> อื่นๆ</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>9. โรคประจำตัว:</label>
+                <input type="text" name="congenital_disease" placeholder="เช่น หอบหืด, ปอดอุดกั้นเรื้อรัง, หัวใจขาดเลือด หรืออื่นๆ">
+            </div>
+            <div class="form-group"><label>10. ยาที่ใช้ประจำ:</label><input type="text" name="regular_meds"></div>
+            <div class="form-group">
+                <label>11. การรักษาโรคประจำตัว:</label>
+                <div class="radio-group">
+                    <label class="radio-inline"><input type="radio" name="treatment_status" value="ต่อเนื่อง"> ต่อเนื่อง (พบแพทย์ตามนัด)</label>
+                    <label class="radio-inline"><input type="radio" name="treatment_status" value="ไม่ต่อเนื่อง"> ไม่ต่อเนื่อง</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>13. การสูบบุหรี่:</label>
+                <input type="text" name="smoking_status" placeholder="ระบุ เช่น ไม่สูบ / สูบ / เคยสูบแต่เลิกแล้ว">
+            </div>
+            <div class="form-group">
+                <label>14. คนในบ้านสูบบุหรี่:</label>
+                <div class="radio-group">
+                    <label class="radio-inline"><input type="radio" name="family_smoke" value="ไม่มี"> ไม่มี</label>
+                    <label class="radio-inline"><input type="radio" name="family_smoke" value="มี"> มี</label>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>15. อุปกรณ์ในห้องประจำ:</label>
+                <input type="text" name="room_equip" placeholder="เช่น เครื่องปรับอากาศ, เครื่องฟอกอากาศ">
+            </div>
+        </fieldset>
+
+        <!-- ส่วนที่ 2 -->
+        <fieldset>
+            <legend>ส่วนที่ 2 อาการแสดงที่อาจเกิดจาก PM2.5</legend>
+            <div class="form-group">
+                <label>16. อาการและอาการแสดง:</label>
+                <input type="text" name="symptoms" placeholder="เช่น หายใจลำบาก, ไอ, ผื่นคัน, แน่นหน้าอก">
+            </div>
+            <div class="form-group">
+                <label>17. การรักษาอาการเจ็บป่วย:</label>
+                <input type="text" name="treatment_action" placeholder="เช่น ไม่ได้รักษา / ไปพบแพทย์ / ซื้อยากินเอง">
+            </div>
+        </fieldset>
+
+        <!-- ส่วนที่ 3 -->
+        <fieldset>
+            <legend>ส่วนที่ 3 ข้อมูลสิ่งแวดล้อม</legend>
+            <div class="form-group"><label>17. ค่า PM2.5 วันนี้ (Air4Thai):</label><input type="text" name="pm25_today"></div>
+            <div class="form-group">
+                <label>18. สถานที่สัมผัสพื้นที่สีแดง (ย้อนหลัง 48 ชม.):</label>
+                <div class="row" style="margin-bottom:8px;"><div class="col"><input type="text" name="place_1" placeholder="สถานที่ 1"></div><div class="col"><input type="text" name="time_1" placeholder="ระยะเวลา 1"></div></div>
+                <div class="row" style="margin-bottom:8px;"><div class="col"><input type="text" name="place_2" placeholder="สถานที่ 2"></div><div class="col"><input type="text" name="time_2" placeholder="ระยะเวลา 2"></div></div>
+                <div class="row"><div class="col"><input type="text" name="place_3" placeholder="สถานที่ 3"></div><div class="col"><input type="text" name="time_3" placeholder="ระยะเวลา 3"></div></div>
+            </div>
+            <div class="form-group">
+                <label>19. ข้อมูลการสัมผัสฝุ่น/ควัน (ตอบ มี / ไม่มี):</label>
+                <table>
+                    <thead><tr><th>แหล่งกำเนิด</th><th style="width:80px;">ไม่มี</th><th style="width:80px;">มี</th></tr></thead>
+                    <tbody>
+                        <tr><td>19.1 ควันบุหรี่ในบ้าน</td><td class="text-center"><input type="radio" name="source_1" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_1" value="มี"></td></tr>
+                        <tr><td>19.2 ควันประกอบอาหาร</td><td class="text-center"><input type="radio" name="source_2" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_2" value="มี"></td></tr>
+                        <tr><td>19.3 ควันจากธูป</td><td class="text-center"><input type="radio" name="source_3" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_3" value="มี"></td></tr>
+                        <tr><td>19.4 โรงไฟฟ้าชีวมวล</td><td class="text-center"><input type="radio" name="source_4" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_4" value="มี"></td></tr>
+                        <tr><td>19.5 ควันรถ/ถนน</td><td class="text-center"><input type="radio" name="source_5" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_5" value="มี"></td></tr>
+                        <tr><td>19.6 เผาฟางข้าว/ไร่/อ้อย</td><td class="text-center"><input type="radio" name="source_6" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_6" value="มี"></td></tr>
+                        <tr><td>19.7 เผาขยะ/ใบไม้</td><td class="text-center"><input type="radio" name="source_7" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_7" value="มี"></td></tr>
+                        <tr><td>19.8 ขุดเจาะหิน/โม่หิน</td><td class="text-center"><input type="radio" name="source_8" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_8" value="มี"></td></tr>
+                        <tr><td>19.9 ฝุ่นก่อสร้าง</td><td class="text-center"><input type="radio" name="source_9" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_9" value="มี"></td></tr>
+                        <tr><td>19.10 โรงงานอุตสาหกรรม</td><td class="text-center"><input type="radio" name="source_10" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_10" value="มี"></td></tr>
+                        <tr><td>19.11 กิจกรรมอื่นๆ</td><td class="text-center"><input type="radio" name="source_11" value="ไม่มี"></td><td class="text-center"><input type="radio" name="source_11" value="มี"></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="form-group" style="margin-top:15px;">
+                <label>20. การป้องกันตนเอง:</label>
+                <input type="text" name="protection" placeholder="เช่น ไม่ได้ป้องกัน / อยู่ในอาคาร / ใช้หน้ากาก N95">
+            </div>
+        </fieldset>
+
+        <!-- ผู้สัมภาษณ์ -->
+        <fieldset>
+            <legend>ข้อมูลผู้สัมภาษณ์</legend>
+            <div class="row">
+                <div class="col"><label>ชื่อผู้สัมภาษณ์:</label><input type="text" name="interviewer_name"></div>
+                <div class="col"><label>ตำแหน่ง:</label><input type="text" name="interviewer_pos"></div>
+            </div>
+            <div class="row" style="margin-top:10px;">
+                <div class="col"><label>หน่วยงาน:</label><input type="text" name="interviewer_org"></div>
+                <div class="col"><label>เบอร์โทร/อีเมล:</label><input type="text" name="interviewer_contact"></div>
+                <div class="col"><label>วันที่สัมภาษณ์:</label><input type="text" name="interview_date"></div>
+            </div>
+        </fieldset>
+
+        <div class="btn-container">
+            <button type="submit" id="submitBtn">บันทึกข้อมูลเข้าระบบ</button>
+            <button type="button" class="btn-secondary" onclick="resetForm()">ล้างฟอร์ม / กรอกใหม่</button>
+        </div>
+        <div id="loading">กำลังบันทึกข้อมูล... กรุณารอสักครู่</div>
+    </form>
+</div>
+
+<script>
+    // ** แทนที่ URL ด้านล่างด้วย URL Web App ที่ได้จาก Google Apps Script **
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzFRhTqITVa4cqLI8FLgorYcE5ubmJ8cv7An8Gph9f1cyJbiMLviolB9TPnVtpb9sWbSw/exec';
+
+    // ฟังก์ชันส่งข้อมูลบันทึก
+    document.getElementById('pm25Form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('loading').style.display = 'block';
+
+        const formData = new FormData(this);
+        const data = {};
+        formData.forEach((value, key) => { data[key] = value; });
+
+        fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+            if(result.result === 'success') {
+                alert('บันทึกข้อมูลสำเร็จเรียบร้อยแล้ว!');
+                document.getElementById('rowId').value = result.row; // เก็บ row ไว้สำหรับการแก้ไขรอบหน้า
+            } else {
+                alert('เกิดข้อผิดพลาดในการบันทึก');
+            }
+        })
+        .catch(error => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
+            console.error('Error:', error);
+            alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+        });
+    });
+
+    // ฟังก์ชันค้นหาเคสเก่า
+    function searchCase() {
+        const keyword = document.getElementById('searchKeyword').value;
+        if(!keyword) {
+            alert('กรุณาพิมพ์ชื่อหรือนามสกุลที่ต้องการค้นหา');
+            return;
+        }
+
+        document.getElementById('searchResultList').innerText = 'กำลังค้นหา...';
+
+        fetch(`${WEB_APP_URL}?action=search&keyword=${encodeURIComponent(keyword)}`)
+        .then(response => response.json())
+        .then(data => {
+            const resultDiv = document.getElementById('searchResultList');
+            if(data.length === 0) {
+                resultDiv.innerText = 'ไม่พบข้อมูลที่ค้นหา';
+                return;
+            }
+
+            let html = `พบ ${data.length} รายการ: `;
+            data.forEach(item => {
+                html += `<a href="#" onclick="loadCaseData(${encodeURIComponent(JSON.stringify(item))}); return false;" style="margin-right:15px; font-weight:bold; color:#0066cc;">[เลือก: ${item.fullname} (${item.interview_date || 'ไม่มีวันที่'})]</a>`;
+            });
+            resultDiv.innerHTML = html;
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById('searchResultList').innerText = 'เกิดข้อผิดพลาดในการค้นหา';
+        });
+    }
+
+    // ฟังก์ชันดึงข้อมูลเก่าลงฟอร์ม
+    function loadCaseData(item) {
+        for (const key in item) {
+            const element = document.querySelector(`[name="${key}"]`);
+            if (element) {
+                if (element.type === 'radio') {
+                    const radio = document.querySelector(`[name="${key}"][value="${item[key]}"]`);
+                    if (radio) radio.checked = true;
+                } else {
+                    element.value = item[key];
+                }
+            }
+        }
+        document.getElementById('rowId').value = item.rowId; // ผูกกับแถวเดิมเพื่อให้กดบันทึกเป็นการ "อัปเดต" ข้อมูลเดิม
+        alert(`ดึงข้อมูลของ ${item.fullname} สำเร็จ! สามารถแก้ไขและกดบันทึกทับได้เลย`);
+    }
+
+    function resetForm() {
+        document.getElementById('pm25Form').reset();
+        document.getElementById('rowId').value = '';
+        document.getElementById('searchResultList').innerHTML = '';
+    }
+</script>
+
+</body>
+</html>
