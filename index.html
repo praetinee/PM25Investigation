@@ -99,7 +99,13 @@
             </div>
             <div class="form-group">
                 <label>9. โรคประจำตัว:</label>
-                <input type="text" name="congenital_disease" placeholder="เช่น หอบหืด, ปอดอุดกั้นเรื้อรัง, หัวใจขาดเลือด หรืออื่นๆ">
+                <div class="checkbox-group">
+                    <label class="checkbox-inline"><input type="checkbox" name="congenital_none" value="ไม่มีโรคประจำตัว" onclick="toggleDisease(this)"> ไม่มีโรคประจำตัว</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="congenital_disease" value="หอบหืด"> 1) โรคหอบหืด</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="congenital_disease" value="ปอดอุดกั้นเรื้อรัง"> 2) โรคปอดอุดกั้นเรื้อรัง</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="congenital_disease" value="หัวใจขาดเลือด"> 3) โรคหัวใจขาดเลือด</label>
+                    <label class="checkbox-inline"><input type="checkbox" name="congenital_disease" value="อื่นๆ"> 4) อื่นๆ</label>
+                </div>
             </div>
             <div class="form-group"><label>10. ยาที่ใช้ประจำ:</label><input type="text" name="regular_meds"></div>
             <div class="form-group">
