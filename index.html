@@ -197,7 +197,7 @@
 </div>
 
 <script>
-    // ** แทนที่ URL ด้านล่างด้วย URL Web App ที่ได้จาก Google Apps Script **
+    // ** แทนที่ URL ด้านล่างด้วย URL Web App ของคุณ **
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzFRhTqITVa4cqLI8FLgorYcE5ubmJ8cv7An8Gph9f1cyJbiMLviolB9TPnVtpb9sWbSw/exec';
 
     // ฟังก์ชันส่งข้อมูลบันทึก
@@ -220,7 +220,6 @@
             document.getElementById('submitBtn').disabled = false;
             if(result.result === 'success') {
                 alert('บันทึกข้อมูลสำเร็จเรียบร้อยแล้ว!');
-                document.getElementById('rowId').value = result.row; // เก็บ row ไว้สำหรับการแก้ไขรอบหน้า
             } else {
                 alert('เกิดข้อผิดพลาดในการบันทึก');
             }
@@ -252,9 +251,11 @@
                 return;
             }
 
-            let html = `พบ ${data.length} รายการ: `;
-            data.forEach(item => {
-                html += `<a href="#" onclick="loadCaseData(${encodeURIComponent(JSON.stringify(item))}); return false;" style="margin-right:15px; font-weight:bold; color:#0066cc;">[เลือก: ${item.fullname} (${item.interview_date || 'ไม่มีวันที่'})]</a>`;
+            let html = `พบ ${data.length} รายการ (คลิกที่ชื่อเพื่อเลือก):<br>`;
+            window.tempSearchResults = data; // เก็บข้อมูลชั่วคราว
+
+            data.forEach((item, index) => {
+                html += `<a href="#" onclick="selectCaseByIndex(${index}); return false;" style="display:inline-block; margin-right:15px; margin-top:5px; font-weight:bold; color:#0066cc;">[เลือก: ${item.fullname} (${item.interview_date || 'ไม่มีวันที่'})]</a>`;
             });
             resultDiv.innerHTML = html;
         })
@@ -264,55 +265,57 @@
         });
     }
 
-    // ฟังก์ชันเมื่อคลิกเลือกรายชื่อจากการค้นหา
-function loadCaseData(item) {
-    // สร้างกล่อง Popup ถามผู้ใช้
-    const choice = confirm(`พบข้อมูลของ: ${item.fullname}\n\nกด "OK" หากต้องการแก้ไขข้อมูลนี้\nกด "Cancel" หากต้องการดูข้อมูลเฉยๆ`);
-
-    // เคลียร์ฟอร์มก่อนเติมข้อมูล
-    document.getElementById('pm25Form').reset();
-
-    // วนลูปหยอดข้อมูลใส่ช่องต่างๆ ตามชื่อ name ของฟอร์ม
-    for (const key in item) {
-        const element = document.querySelector(`[name="${key}"]`);
-        if (element) {
-            if (element.type === 'radio') {
-                const radio = document.querySelector(`[name="${key}"][value="${item[key]}"]`);
-                if (radio) radio.checked = true;
-            } else {
-                element.value = item[key];
-            }
+    // ฟังก์ชันรับค่า index จากการคลิก
+    function selectCaseByIndex(index) {
+        const item = window.tempSearchResults[index];
+        if (item) {
+            loadCaseData(item);
         }
     }
 
-    // จัดการสิทธิ์ตามที่ผู้ใช้กดเลือกใน Popup
-    const inputs = document.querySelectorAll('#pm25Form input, #pm25Form select, #pm25Form textarea');
-    const submitBtn = document.getElementById('submitBtn');
+    // ฟังก์ชันเปิด Popup ถามโหมด (แก้ไข หรือ ดูอย่างเดียว)
+    function loadCaseData(item) {
+        const choice = confirm(`พบข้อมูลของ: ${item.fullname}\n\nกด "OK" หากต้องการแก้ไขข้อมูลนี้\nกด "Cancel" หากต้องการดูข้อมูลเฉยๆ (อ่านอย่างเดียว)`);
 
-    if (choice) {
-        // ถ้ากด OK = เลือก "แก้ไขข้อมูล" -> เปิดให้แก้ฟอร์มได้ปกติ และผูก rowId ไว้เผื่อต้องการอัปเดต
-        inputs.forEach(input => input.disabled = false);
-        submitBtn.style.display = 'inline-block';
-        document.getElementById('rowId').value = item.rowId; 
-        alert('โหมดแก้ไข: คุณสามารถปรับเปลี่ยนข้อมูลแล้วกดบันทึกได้');
-    } else {
-        // ถ้ากด Cancel = เลือก "ดูข้อมูลเฉยๆ" -> ล็อคฟอร์มไม่ให้พิมพ์แก้ และซ่อนปุ่มบันทึกป้องกันการกดทับ
-        inputs.forEach(input => input.disabled = true);
-        submitBtn.style.display = 'none';
-        alert('โหมดอ่านอย่างเดียว: ไม่สามารถแก้ไขข้อมูลได้');
+        document.getElementById('pm25Form').reset();
+
+        for (const key in item) {
+            const element = document.querySelector(`[name="${key}"]`);
+            if (element) {
+                if (element.type === 'radio') {
+                    const radio = document.querySelector(`[name="${key}"][value="${item[key]}"]`);
+                    if (radio) radio.checked = true;
+                } else {
+                    element.value = item[key];
+                }
+            }
+        }
+
+        const inputs = document.querySelectorAll('#pm25Form input, #pm25Form select, #pm25Form textarea');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (choice) {
+            inputs.forEach(input => input.disabled = false);
+            submitBtn.style.display = 'inline-block';
+            document.getElementById('rowId').value = item.rowId;
+            alert('เข้าสู่โหมดแก้ไข: คุณสามารถปรับเปลี่ยนข้อมูลแล้วกดบันทึกเพิ่มเคสใหม่ได้');
+        } else {
+            inputs.forEach(input => input.disabled = true);
+            submitBtn.style.display = 'none';
+            alert('เข้าสู่โหมดอ่านอย่างเดียว: ฟอร์มถูกล็อคไม่ให้แก้ไข');
+        }
     }
-}
 
+    // ฟังก์ชันล้างฟอร์มและปลดล็อคกลับมาปกติ
     function resetForm() {
-    document.getElementById('pm25Form').reset();
-    document.getElementById('rowId').value = '';
-    document.getElementById('searchResultList').innerHTML = '';
-    
-    // ** เพิ่มบรรทัดเหล่านี้เพื่อปลดล็อคฟอร์มและแสดงปุ่มบันทึกกลับมาเหมือนเดิม **
-    const inputs = document.querySelectorAll('#pm25Form input, #pm25Form select, #pm25Form textarea');
-    inputs.forEach(input => input.disabled = false);
-    document.getElementById('submitBtn').style.display = 'inline-block';
-}
+        document.getElementById('pm25Form').reset();
+        document.getElementById('rowId').value = '';
+        document.getElementById('searchResultList').innerHTML = '';
+        
+        const inputs = document.querySelectorAll('#pm25Form input, #pm25Form select, #pm25Form textarea');
+        inputs.forEach(input => input.disabled = false);
+        document.getElementById('submitBtn').style.display = 'inline-block';
+    }
 </script>
 
 </body>
