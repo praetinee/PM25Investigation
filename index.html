@@ -21,7 +21,7 @@
         .row { display: flex; gap: 15px; flex-wrap: wrap; }
         .col { flex: 1; min-width: 200px; }
         label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
-        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; font-family: 'Sarabun'; font-size: 14px; box-sizing: border-box; }
+        input[type="text"], input[type="number"], input[type="date"], select, textarea { width: 100%; padding: 9px 12px; border: 1px solid #ccc; border-radius: 6px; font-family: 'Sarabun'; font-size: 14px; box-sizing: border-box; }
         .checkbox-group, .radio-group { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
         .checkbox-inline, .radio-inline { display: flex; align-items: center; gap: 8px; font-weight: normal; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
@@ -97,6 +97,8 @@
                     <label class="radio-inline"><input type="radio" name="occupation" value="อื่นๆ"> อื่นๆ</label>
                 </div>
             </div>
+            
+            <!-- ข้อ 9: โรคประจำตัว (เพิ่มเงื่อนไขติ๊กไม่มีโรค) -->
             <div class="form-group">
                 <label>9. โรคประจำตัว:</label>
                 <div class="checkbox-group">
@@ -107,14 +109,19 @@
                     <label class="checkbox-inline"><input type="checkbox" name="congenital_disease" value="อื่นๆ"> 4) อื่นๆ</label>
                 </div>
             </div>
+
             <div class="form-group"><label>10. ยาที่ใช้ประจำ:</label><input type="text" name="regular_meds"></div>
-            <div class="form-group">
+            
+            <!-- ข้อ 11: การรักษา (เชื่อมกับเงื่อนไขข้อ 9) -->
+            <div class="form-group" id="treatmentStatusGroup">
                 <label>11. การรักษาโรคประจำตัว:</label>
                 <div class="radio-group">
+                    <label class="radio-inline"><input type="radio" name="treatment_status" value="ไม่มีโรคประจำตัว"> ไม่มีโรคประจำตัว / ไม่ต้องรับการรักษา</label>
                     <label class="radio-inline"><input type="radio" name="treatment_status" value="ต่อเนื่อง"> ต่อเนื่อง (พบแพทย์ตามนัด)</label>
                     <label class="radio-inline"><input type="radio" name="treatment_status" value="ไม่ต่อเนื่อง"> ไม่ต่อเนื่อง</label>
                 </div>
             </div>
+
             <div class="form-group">
                 <label>13. การสูบบุหรี่:</label>
                 <input type="text" name="smoking_status" placeholder="ระบุ เช่น ไม่สูบ / สูบ / เคยสูบแต่เลิกแล้ว">
@@ -190,13 +197,12 @@
             <div class="row" style="margin-top:10px;">
                 <div class="col"><label>หน่วยงาน:</label><input type="text" name="interviewer_org"></div>
                 <div class="col"><label>เบอร์โทร/อีเมล:</label><input type="text" name="interviewer_contact"></div>
-                <div class="col"><label>วันที่สัมภาษณ์:</label><input type="text" name="interview_date"></div>
+                <div class="col"><label>วันที่สัมภาษณ์:</label><input type="date" name="interview_date" id="interviewDate"></div>
             </div>
         </fieldset>
 
         <div class="btn-container">
             <button type="submit" id="submitBtn">บันทึกข้อมูลเข้าระบบ</button>
-            <!-- เปลี่ยนข้อความตรงนี้ให้สื่อความหมายชัดเจน -->
             <button type="button" class="btn-secondary" onclick="resetForm()">ล้างข้อมูลเพื่อบันทึกเคสใหม่</button>
         </div>
         <div id="loading">กำลังบันทึกข้อมูล... กรุณารอสักครู่</div>
@@ -207,7 +213,34 @@
     // ** แทนที่ URL ด้านล่างด้วย URL Web App ของคุณ **
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzFRhTqITVa4cqLI8FLgorYcE5ubmJ8cv7An8Gph9f1cyJbiMLviolB9TPnVtpb9sWbSw/exec';
 
-    // ฟังก์ชันส่งข้อมูลบันทึก
+    // ตั้งค่าวันที่ปัจจุบันให้อัตโนมัติเมื่อเปิดหน้าเว็บ
+    window.addEventListener('DOMContentLoaded', (event) => {
+        const today = new Date().toISOString().split('T')[0];
+        const dateField = document.getElementById('interviewDate');
+        if (dateField && !dateField.value) {
+            dateField.value = today;
+        }
+    });
+
+    // เงื่อนไขข้อ 9: ถ้าติ๊กไม่มีโรคประจำตัว ให้ล็อคข้อ 11 อัตโนมัติ
+    function toggleDisease(checkbox) {
+        const treatmentRadios = document.querySelectorAll('input[name="treatment_status"]');
+        if (checkbox.checked) {
+            treatmentRadios.forEach(radio => {
+                if (radio.value === 'ไม่มีโรคประจำตัว') {
+                    radio.checked = true;
+                }
+                radio.disabled = true;
+            });
+        } else {
+            treatmentRadios.forEach(radio => {
+                radio.disabled = false;
+                radio.checked = false;
+            });
+        }
+    }
+
+    // ฟังก์ชันส่งข้อมูลบันทึก (รองรับทั้งเพิ่มใหม่และอัปเดตเคสเก่า)
     document.getElementById('pm25Form').addEventListener('submit', function(e) {
         e.preventDefault();
         document.getElementById('submitBtn').disabled = true;
@@ -259,7 +292,7 @@
             }
 
             let html = `พบ ${data.length} รายการ (คลิกที่ชื่อเพื่อเลือก):<br>`;
-            window.tempSearchResults = data; // เก็บข้อมูลชั่วคราว
+            window.tempSearchResults = data;
 
             data.forEach((item, index) => {
                 html += `<a href="#" onclick="selectCaseByIndex(${index}); return false;" style="display:inline-block; margin-right:15px; margin-top:5px; font-weight:bold; color:#0066cc;">[เลือก: ${item.fullname} (${item.interview_date || 'ไม่มีวันที่'})]</a>`;
@@ -272,7 +305,6 @@
         });
     }
 
-    // ฟังก์ชันรับค่า index จากการคลิก
     function selectCaseByIndex(index) {
         const item = window.tempSearchResults[index];
         if (item) {
@@ -305,7 +337,7 @@
             inputs.forEach(input => input.disabled = false);
             submitBtn.style.display = 'inline-block';
             document.getElementById('rowId').value = item.rowId;
-            alert('เข้าสู่โหมดแก้ไข: คุณสามารถปรับเปลี่ยนข้อมูลแล้วกดบันทึกเพิ่มเคสใหม่ได้');
+            alert('เข้าสู่โหมดแก้ไข: สามารถปรับเปลี่ยนข้อมูลแล้วกดบันทึกทับแถวเดิมได้');
         } else {
             inputs.forEach(input => input.disabled = true);
             submitBtn.style.display = 'none';
@@ -313,24 +345,19 @@
         }
     }
 
-    // ฟังก์ชันล้างข้อมูลเพื่อเริ่มเคสใหม่ (ตัดวงจร rowId ป้องกันการทับข้อมูลเก่า)
+    // ปุ่มตัดวงจร: ล้างข้อมูลเพื่อเริ่มเคสใหม่ (เคลียร์ rowId และปลดล็อคฟอร์ม)
     function resetForm() {
-        // 1. เคลียร์ค่าในฟอร์มทั้งหมด
         document.getElementById('pm25Form').reset();
-    
-        // 2. **สำคัญที่สุด:** ล้างค่า rowId ทิ้งให้เป็นค่าว่าง เพื่อบังคับให้ระบบมองเป็น "เคสใหม่" (เพิ่มแถวใหม่) เท่านั้น
         document.getElementById('rowId').value = '';
-    
-        // 3. เคลียร์ผลการค้นหาค้างทิ้ง
         document.getElementById('searchResultList').innerHTML = '';
-    
-        // 4. ปลดล็อคฟอร์มทุกช่อง (กรณีที่เผลอไปกดดูแบบอ่านอย่างเดียว) ให้กลับมาพิมพ์ได้ปกติ
+        
+        // คืนค่าวันที่ปัจจุบันลงไปใหม่
+        document.getElementById('interviewDate').value = new Date().toISOString().split('T')[0];
+
         const inputs = document.querySelectorAll('#pm25Form input, #pm25Form select, #pm25Form textarea');
         inputs.forEach(input => input.disabled = false);
-    
-        // 5. แสดงปุ่มบันทึกกลับมา
         document.getElementById('submitBtn').style.display = 'inline-block';
-    
+        
         alert('ล้างหน้าจอเรียบร้อย: พร้อมสำหรับบันทึกเคสใหม่แล้วครับ');
     }
 </script>
