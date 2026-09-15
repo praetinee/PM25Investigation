@@ -111,15 +111,22 @@
 </head>
 <body>
     <!-- หน้าต่างรหัสผ่านบังคับก่อนเข้าใช้งาน -->
-    <div id="authOverlay">
-        <div class="auth-box">
-            <h3>🔒 ระบบป้องกันความปลอดภัย</h3>
-            <p style="font-size: 14px; color: #666;">กรุณากรอกรหัสผ่านเพื่อเข้าสู่ระบบคลินิกมลพิษ</p>
-            <input type="password" id="passInput" placeholder="ป้อนรหัสผ่าน" onkeypress="checkEnter(event)">
-            <div class="auth-buttons">
-                <button type="button" class="btn-confirm" onclick="verifyPassword()">ตกลง</button>
-                <a href="https://praetinee.github.io/JanWorkspace/" class="btn-back">กลับไป Workspace</a>
+    <div id="authOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(100, 116, 139, 0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div style="background: white; padding: 24px 28px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 360px; box-sizing: border-box; font-family: 'Sarabun', sans-serif;">
+            
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                <h2 style="margin: 0; color: #0f172a; font-size: 18px; font-weight: bold;">ยืนยันตัวตนเข้าสู่ระบบ</h2>
             </div>
+            <p style="margin: 0 0 16px 0; color: #64748b; font-size: 13px;">กรุณาใส่รหัสผ่านเพื่อเข้าสู่ระบบคลินิกมลพิษ</p>
+
+            <input type="password" id="passInput" placeholder="รหัสผ่าน..." style="width: 100%; padding: 10px 14px; border: 1.5px solid #0f172a; border-radius: 6px; box-sizing: border-box; font-size: 14px; outline: none; margin-bottom: 8px;" onkeypress="checkEnter(event)">
+
+            <div style="display: flex; gap: 8px; width: 100%; margin-top: 16px;">
+                <button type="button" onclick="verifyPassword()" style="flex: 1; padding: 10px; background: #0f172a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; margin: 0;">เข้าสู่ระบบ</button>
+                <button type="button" onclick="window.location.href='https://praetinee.github.io/JanWorkspace/'" style="flex: 1; padding: 10px; background: white; color: #64748b; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 14px; margin: 0;">กลับ Workspace</button>
+            </div>
+            
         </div>
     </div>
     <!-- ปุ่มลิงก์ไป Workspace มุมบนขวา -->
